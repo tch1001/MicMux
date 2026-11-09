@@ -132,3 +132,48 @@ iPhone route ─▶ PCM16 ─▶ iroh QUIC ─┘                               
                                                                             │
 system playback ─▶ separate loopback reference ─────────────────────────────┘
 ```
+
+## On-demand capture
+
+Enable **On-demand capture** under Output (or in the menu bar), and select BlackHole
+as both the MicMux output and the receiving application's microphone. MicMux watches
+Core Audio process input activity without opening the microphones. An external input
+consumer starts capture; when the last consumer ends, capture stops after roughly
+1–2 seconds. Silence within a session does not stop capture. MicMux's own process
+is excluded. The selected virtual device must have both input and output channels.
+
+Disable on-demand capture to stop and return to manual Start/Stop. The on-demand
+choice persists across launches; it is off by default. New aggregate sources default
+to disabled to avoid capturing temporary HAL routes. Monitoring remains opt-in.
+
+Core Audio notifications drive wakeup, with one-second reconciliation as a fallback.
+Hardware startup can delay the first syllable; verify with the actual dictation app.
+Applications that hold their input open between sessions will keep capture running.
+Phone-side streaming is still controlled on the phone. This mode tracks input stream
+usage, not whether an app is in the foreground or currently recognizes speech. The
+microphone indicator may briefly remain visible after Core Audio releases the inputs.
+
+On Command Line Tools-only Macs, run the capture-free demand checks with:
+
+```sh
+swiftc -warnings-as-errors Sources/MicMux/AudioDemandMonitor.swift Tests/Standalone/AudioDemandChecks.swift -o /tmp/micmux-demand-checks
+/tmp/micmux-demand-checks
+```
+
+## Menu-bar operation and login startup
+
+The macOS app runs in the menu bar without a Dock icon. Launching it does not
+open the main window; choose **Show MicMux** from its microphone menu-bar icon
+to open the controls. Closing that window leaves MicMux running. Use **Quit
+MicMux** in the same menu to exit. This does not change capture preferences,
+input/output routing, or the system default audio devices.
+
+To start it when you sign in, install the app at `/Applications/MicMux.app`,
+then add it once in **System Settings → General → Login Items & Extensions →
+Open at Login**. If MicMux is already listed, reuse that entry after updating
+the app at the same path. Do not also add a LaunchAgent or another login helper.
+Remove that entry to disable login startup.
+
+A locally rebuilt/ad-hoc-signed update may require macOS microphone permission
+to be granted again. Login startup does not grant permissions or enable capture;
+the existing opt-in on-demand preference remains in effect.

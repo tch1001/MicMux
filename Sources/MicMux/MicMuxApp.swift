@@ -22,11 +22,16 @@ struct MicMuxApp: App {
     Window("MicMux", id: "main") {
       ContentView(model: model)
     }
+    // Login launches stay in the menu bar; Show MicMux opens this same window.
+    .defaultLaunchBehavior(.suppressed)
     .defaultSize(width: 900, height: 680)
     .commands {
       CommandGroup(after: .appInfo) {
         Divider()
-        Button(model.running ? "Stop MicMux" : "Start MicMux") {
+        Button(
+          model.onDemandEnabled
+            ? "Disable on-demand capture" : (model.running ? "Stop MicMux" : "Start MicMux")
+        ) {
           model.toggleRunning()
         }
         .keyboardShortcut(.space, modifiers: [.command])
@@ -50,9 +55,18 @@ private struct MicMuxMenuBarContent: View {
   @Environment(\.openWindow) private var openWindow
 
   var body: some View {
-    Button(model.running ? "Stop MicMux" : "Start MicMux") {
+    Button(
+      model.onDemandEnabled
+        ? "Disable on-demand capture" : (model.running ? "Stop MicMux" : "Start MicMux")
+    ) {
       model.toggleRunning()
     }
+
+    Toggle(
+      "On-demand capture",
+      isOn: Binding(
+        get: { model.onDemandEnabled }, set: { model.setOnDemandEnabled($0) }))
+    Text(model.demandStatus)
 
     Menu("Selection: \(model.selectionMode.rawValue)") {
       ForEach(SelectionMode.allCases) { mode in
